@@ -9,11 +9,10 @@ st.set_page_config(
     page_title="Hệ Thống Quản Lý Ao Nuôi Đa Cấp", page_icon="💧", layout="centered"
 )
 
-# Tên file dùng để lưu dữ liệu vĩnh viễn trên máy chủ
 DATA_FILE = "data_ao_nuoi.json"
 
 
-# --- HÀM ĐỌC / GHI DỮ LIỆU VĨNH VIỄN ---
+# --- HÀM ĐỌC / GHI DỮ LIỆU ---
 def load_data():
   if os.path.exists(DATA_FILE):
     try:
@@ -57,6 +56,10 @@ def load_data():
               "ph_log": {},
           }
       ],
+      "huong_dan_benh": {
+          "dangpham": "Sổ tay phác đồ trị bệnh của Đăng...",
+          "chuao_a": "Sổ tay phác đồ trị bệnh của Anh Ba...",
+      },
   }
 
 
@@ -64,6 +67,7 @@ def save_data():
   data_to_save = {
       "users": st.session_state.users,
       "data_ao": [],
+      "huong_dan_benh": st.session_state.huong_dan_benh,
   }
   for ao in st.session_state.data_ao:
     ao_copy = ao.copy()
@@ -78,6 +82,10 @@ if "initialized" not in st.session_state:
   saved_data = load_data()
   st.session_state.users = saved_data["users"]
   st.session_state.data_ao = saved_data["data_ao"]
+  st.session_state.huong_dan_benh = saved_data.get(
+      "huong_dan_benh",
+      {"dangpham": "Sổ tay Admin...", "chuao_a": "Sổ tay Chủ ao..."},
+  )
   st.session_state.initialized = True
 
 if "logged_in" not in st.session_state:
@@ -131,10 +139,11 @@ with st.sidebar.expander("🔑 Đổi Mật Khẩu"):
       else:
         st.error("Mật khẩu cũ không chính xác!")
 
-# TÍNH NĂNG TẠO TÀI KHOẢN MỚI DÀNH CHO ADMIN / QUẢN LÝ
-if user_info["role"] in ["admin", "manager"]:
+# TÍNH NĂNG TẠO TÀI KHOẢN MỚI
+if user_info["role"] == "admin":
+  # Admin được quyền tạo cả Manager (chủ ao) lẫn Staff (nhân viên)
   with st.sidebar.expander("👤 Tạo Tài Khoản Mới"):
-    with st.form("create_user_form"):
+    with st.form("create_user_form_admin"):
       new_user_username = st.text_input("Tên đăng nhập mới")
       new_user_password = st.text_input("Mật khẩu", type="password")
       new_user_name = st.text_input("Tên hiển thị (Họ tên)")
@@ -160,33 +169,49 @@ if user_info["role"] in ["admin", "manager"]:
                 "password": new_user_password,
                 "ten": new_user_name,
                 "role": new_user_role,
-                "owner": st.session_state.current_user,
+                "owner": "dangpham"
+                if new_user_role == "staff"
+                else "system",
             }
+            if new_user_role == "manager":
+              st.session_state.huong_dan_benh[new_user_username] = (
+                  "Nhập hướng dẫn trị bệnh..."
+              )
             save_data()
             st.success(f"Đã tạo tài khoản '{new_user_name}' thành công!")
             st.rerun()
         else:
           st.error("Vui lòng điền đầy đủ thông tin!")
 
-# HƯỚNG DẪN XỬ LÝ BỆNH NẰM NGAY TRÊN SIDEBAR CHO DỄ NHÌN
-with st.sidebar.expander("📖 Hướng Dẫn Xử Lý Bệnh"):
-  st.markdown("""
-  ### 1. Bệnh Đốm Trắng
-  * **Nguyên nhân:** Do virus, biến động nhiệt độ.
-  * **Xử lý:** Tăng sủi khí oxy, giảm 50% thức ăn, bổ sung Vitamin C và khoáng chất.
+elif user_info["role"] == "manager":
+  # Chủ ao (Manager) chỉ được quyền tạo nhân viên (Staff) trực thuộc chính mình
+  with st.sidebar.expander("👤 Tạo Tài Khoản Nhân Viên"):
+    with st.form("create_user_form_manager"):
+      new_user_username = st.text_input("Tên đăng nhập nhân viên")
+      new_user_password = st.text_input("Mật khẩu", type="password")
+      new_user_name = st.text_input("Tên hiển thị nhân viên")
+      submit_create_staff = st.form_submit_button("Tạo Tài Khoản Nhân Viên")
 
-  ### 2. Bệnh Gan Tụy Cấp (EMS)
-  * **Nguyên nhân:** Vi khuẩn *Vibrio*.
-  * **Xử lý:** Sát trùng nước ao, trộn thảo dược/kháng sinh gan vào thức ăn 3-5 ngày.
-
-  ### 3. Bệnh Phân Trắng
-  * **Nguyên nhân:** Môi trường dơ, tảo độc, ký sinh trùng đường ruột.
-  * **Xử lý:** Xử lý vi sinh, cắt tảo, trộn men tiêu hóa và axit hữu cơ vào thức ăn.
-
-  ### 4. Sốc pH / Biến Động pH
-  * **Nguyên nhân:** Mưa đột ngột, tảo tàn.
-  * **Xử lý:** Tạt vôi CaCO3/Dolomite ổn định pH, bổ sung điện giải và Vitamin C cấp tốc.
-  """)
+      if submit_create_staff:
+        if (
+            new_user_username
+            and new_user_password
+            and new_user_name
+        ):
+          if new_user_username in st.session_state.users:
+            st.error("Tên đăng nhập này đã tồn tại!")
+          else:
+            st.session_state.users[new_user_username] = {
+                "password": new_user_password,
+                "ten": new_user_name,
+                "role": "staff",
+                "owner": st.session_state.current_user,
+            }
+            save_data()
+            st.success(f"Đã tạo tài khoản nhân viên '{new_user_name}' thành công!")
+            st.rerun()
+        else:
+          st.error("Vui lòng điền đầy đủ thông tin!")
 
 if st.sidebar.button("Đăng Xuất"):
   st.session_state.logged_in = False
@@ -385,7 +410,7 @@ if selected_ao_display is not None:
         "chieu": ph_chieu,
     }
     save_data()
-    st.success(f"Đã lưu thành công chỉ số pH cho {selected_moc}!")
+    st.success(f"💾 Đã lưu thành công chỉ số pH cho {selected_moc}!")
     st.rerun()
 
   # --- LỊCH TRÌNH TÁC THUỐC ĐỊNH KỲ ---
@@ -425,3 +450,44 @@ if selected_ao_display is not None:
 
   df_lich = pd.DataFrame(lich_trinh_data)
   st.dataframe(df_lich, use_container_width=True, hide_index=True)
+
+  # --- SỔ TAY HƯỚNG DẪN TRỊ BỆNH THEO TỪNG CHỦ AO ---
+  st.subheader("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh")
+
+  # Xác định chủ ao sở hữu ao đang xem
+  chu_ao_ao = current_ao["chu_so_huu"]
+
+  if chu_ao_ao not in st.session_state.huong_dan_benh:
+    st.session_state.huong_dan_benh[chu_ao_ao] = (
+        "Chưa có hướng dẫn trị bệnh."
+    )
+
+  # Quyền sửa: Admin sửa được tất cả, Chủ ao chỉ sửa được sổ tay của chính họ
+  duoc_phep_sua = (user_info["role"] == "admin") or (
+      user_info["role"] == "manager"
+      and st.session_state.current_user == chu_ao_ao
+  )
+
+  if duoc_phep_sua:
+    st.info(
+        f"💡 Bạn đang chỉnh sửa sổ tay trị bệnh cho ao thuộc hệ thống của"
+        f" **{st.session_state.users.get(chu_ao_ao, {}).get('ten', chu_ao_ao)}**."
+    )
+    with st.form(f"form_sua_hd_{current_ao['id']}"):
+      noi_dung_moi = st.text_area(
+          "Nội dung hướng dẫn & phác đồ trị bệnh",
+          value=st.session_state.huong_dan_benh[chu_ao_ao],
+          height=250,
+      )
+      submit_sua_hd = st.form_submit_button("💾 Lưu Lại Sổ Tay Này")
+      if submit_sua_hd:
+        st.session_state.huong_dan_benh[chu_ao_ao] = noi_dung_moi
+        save_data()
+        st.success("Đã cập nhật sổ tay trị bệnh thành công!")
+        st.rerun()
+  else:
+    st.markdown("---")
+    st.markdown(
+        f"**Phác đồ/Hướng dẫn trị bệnh từ chủ ao quản lý:**\n\n"
+        f"{st.session_state.huong_dan_benh[chu_ao_ao]}"
+    )
