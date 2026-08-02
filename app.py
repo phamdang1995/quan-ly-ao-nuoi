@@ -57,8 +57,8 @@ def load_data():
           }
       ],
       "huong_dan_benh": {
-          "dangpham": "Sổ tay phác đồ trị bệnh của Đăng...",
-          "chuao_a": "Sổ tay phác đồ trị bệnh của Anh Ba...",
+          "dangpham": "Sổ tay phác đồ trị bệnh riêng của Admin Đăng...",
+          "chuao_a": "Sổ tay phác đồ trị bệnh riêng của Chủ ao Anh Ba...",
       },
   }
 
@@ -83,8 +83,7 @@ if "initialized" not in st.session_state:
   st.session_state.users = saved_data["users"]
   st.session_state.data_ao = saved_data["data_ao"]
   st.session_state.huong_dan_benh = saved_data.get(
-      "huong_dan_benh",
-      {"dangpham": "Sổ tay Admin...", "chuao_a": "Sổ tay Chủ ao..."},
+      "huong_dan_benh", {"dangpham": "Sổ tay Admin..."}
   )
   st.session_state.initialized = True
 
@@ -174,7 +173,7 @@ if user_info["role"] == "admin":
             }
             if new_user_role == "manager":
               st.session_state.huong_dan_benh[new_user_username] = (
-                  "Nhập hướng dẫn trị bệnh..."
+                  "Sổ tay phác đồ trị bệnh của chủ ao này..."
               )
             save_data()
             st.success(f"Đã tạo tài khoản '{new_user_name}' thành công!")
@@ -211,30 +210,32 @@ elif user_info["role"] == "manager":
         else:
           st.error("Vui lòng điền đầy đủ thông tin!")
 
-# HƯỚNG DẪN TRỊ BỆNH NẰM TRÊN SIDEBAR CHO CHỦ AO & NHÂN VIÊN
-if user_info["role"] == "manager":
+# SỔ TAY TRỊ BỆNH TRÊN SIDEBAR
+# 1. Nếu là Admin hoặc Chủ ao -> Hiển thị khung tự sửa sổ tay riêng của họ
+if user_info["role"] in ["admin", "manager"]:
   with st.sidebar.expander("📖 Sổ Tay Trị Bệnh (Tự Sửa)"):
-    with st.form("sidebar_edit_hd_manager"):
+    with st.form(f"sidebar_edit_hd_{st.session_state.current_user}"):
+      current_key = st.session_state.current_user
+      if current_key not in st.session_state.huong_dan_benh:
+        st.session_state.huong_dan_benh[current_key] = "Nhập phác đồ..."
+
       noi_dung_sb = st.text_area(
-          "Cập nhật phác đồ",
-          value=st.session_state.huong_dan_benh.get(
-              st.session_state.current_user, ""
-          ),
-          height=150,
+          "Cập nhật phác đồ của bạn",
+          value=st.session_state.huong_dan_benh[current_key],
+          height=180,
       )
-      if st.form_submit_button("Lưu Sổ Tay"):
-        st.session_state.huong_dan_benh[st.session_state.current_user] = (
-            noi_dung_sb
-        )
+      if st.form_submit_button("💾 Lưu Sổ Tay"):
+        st.session_state.huong_dan_benh[current_key] = noi_dung_sb
         save_data()
-        st.success("Đã lưu!")
+        st.success("Đã lưu sổ tay thành công!")
         st.rerun()
 
+# 2. Nếu là Nhân viên -> Chỉ hiển thị xem sổ tay của chủ quản lý trực tiếp
 elif user_info["role"] == "staff":
   with st.sidebar.expander("📖 Xem Sổ Tay Trị Bệnh"):
     chu_quan_ly = user_info["owner"]
     noi_dung_xem = st.session_state.huong_dan_benh.get(
-        chu_quan_ly, "Chưa có hướng dẫn."
+        chu_quan_ly, "Chủ quản lý chưa cập nhật hướng dẫn."
     )
     st.markdown(noi_dung_xem)
 
@@ -476,41 +477,13 @@ if selected_ao_display is not None:
   df_lich = pd.DataFrame(lich_trinh_data)
   st.dataframe(df_lich, use_container_width=True, hide_index=True)
 
-  # --- SỔ TAY HƯỚNG DẪN TRỊ BỆNH THEO TỪNG CHỦ AO ---
+  # --- HIỂN THỊ SỔ TAY PHÁC ĐỒ TRỊ BỆNH CỦA CHỦ AO ĐANG QUẢN LÝ AO NÀY ---
   st.subheader("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh")
-
   chu_ao_ao = current_ao["chu_so_huu"]
-
-  if chu_ao_ao not in st.session_state.huong_dan_benh:
-    st.session_state.huong_dan_benh[chu_ao_ao] = (
-        "Chưa có hướng dẫn trị bệnh."
-    )
-
-  duoc_phep_sua = (user_info["role"] == "admin") or (
-      user_info["role"] == "manager"
-      and st.session_state.current_user == chu_ao_ao
+  noi_dung_hien_thi = st.session_state.huong_dan_benh.get(
+      chu_ao_ao, "Chưa có hướng dẫn trị bệnh."
   )
-
-  if duoc_phep_sua:
-    st.info(
-        f"💡 Bạn đang chỉnh sửa sổ tay trị bệnh cho ao thuộc hệ thống của"
-        f" **{st.session_state.users.get(chu_ao_ao, {}).get('ten', chu_ao_ao)}**."
-    )
-    with st.form(f"form_sua_hd_{current_ao['id']}"):
-      noi_dung_moi = st.text_area(
-          "Nội dung hướng dẫn & phác đồ trị bệnh",
-          value=st.session_state.huong_dan_benh[chu_ao_ao],
-          height=250,
-      )
-      submit_sua_hd = st.form_submit_button("💾 Lưu Lại Sổ Tay Này")
-      if submit_sua_hd:
-        st.session_state.huong_dan_benh[chu_ao_ao] = noi_dung_moi
-        save_data()
-        st.success("Đã cập nhật sổ tay trị bệnh thành công!")
-        st.rerun()
-  else:
-    st.markdown("---")
-    st.markdown(
-        f"**Phác đồ/Hướng dẫn trị bệnh từ chủ ao quản lý:**\n\n"
-        f"{st.session_state.huong_dan_benh[chu_ao_ao]}"
-    )
+  st.info(
+      f"💡 Phác đồ này do chủ sở hữu ao (**{st.session_state.users.get(chu_ao_ao, {}).get('ten', chu_ao_ao)}**) biên soạn trực tiếp:"
+  )
+  st.markdown(noi_dung_hien_thi)
