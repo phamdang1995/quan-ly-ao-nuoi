@@ -112,6 +112,25 @@ if not st.session_state.logged_in:
 user_info = st.session_state.users[st.session_state.current_user]
 st.sidebar.title(f"Chào, {user_info['ten']}")
 
+# TÍNH NĂNG ĐỔI MẬT KHẨU CÁ NHÂN
+with st.sidebar.expander("🔑 Đổi Mật Khẩu"):
+  with st.form("change_password_form"):
+    old_pass = st.text_input("Mật khẩu cũ", type="password")
+    new_pass = st.text_input("Mật khẩu mới", type="password")
+    confirm_pass = st.text_input("Xác nhận mật khẩu mới", type="password")
+    submit_change_pass = st.form_submit_button("Cập Nhật Mật Khẩu")
+
+    if submit_change_pass:
+      if old_pass == user_info["password"]:
+        if new_pass and new_pass == confirm_pass:
+          user_info["password"] = new_pass
+          save_data()
+          st.success("Đổi mật khẩu thành công!")
+        else:
+          st.error("Mật khẩu mới không khớp hoặc bị để trống!")
+      else:
+        st.error("Mật khẩu cũ không chính xác!")
+
 # TÍNH NĂNG TẠO TÀI KHOẢN MỚI DÀNH CHO ADMIN / QUẢN LÝ
 if user_info["role"] in ["admin", "manager"]:
   with st.sidebar.expander("👤 Tạo Tài Khoản Mới"):
@@ -149,6 +168,26 @@ if user_info["role"] in ["admin", "manager"]:
         else:
           st.error("Vui lòng điền đầy đủ thông tin!")
 
+# HƯỚNG DẪN XỬ LÝ BỆNH NẰM NGAY TRÊN SIDEBAR CHO DỄ NHÌN
+with st.sidebar.expander("📖 Hướng Dẫn Xử Lý Bệnh"):
+  st.markdown("""
+  ### 1. Bệnh Đốm Trắng
+  * **Nguyên nhân:** Do virus, biến động nhiệt độ.
+  * **Xử lý:** Tăng sủi khí oxy, giảm 50% thức ăn, bổ sung Vitamin C và khoáng chất.
+
+  ### 2. Bệnh Gan Tụy Cấp (EMS)
+  * **Nguyên nhân:** Vi khuẩn *Vibrio*.
+  * **Xử lý:** Sát trùng nước ao, trộn thảo dược/kháng sinh gan vào thức ăn 3-5 ngày.
+
+  ### 3. Bệnh Phân Trắng
+  * **Nguyên nhân:** Môi trường dơ, tảo độc, ký sinh trùng đường ruột.
+  * **Xử lý:** Xử lý vi sinh, cắt tảo, trộn men tiêu hóa và axit hữu cơ vào thức ăn.
+
+  ### 4. Sốc pH / Biến Động pH
+  * **Nguyên nhân:** Mưa đột ngột, tảo tàn.
+  * **Xử lý:** Tạt vôi CaCO3/Dolomite ổn định pH, bổ sung điện giải và Vitamin C cấp tốc.
+  """)
+
 if st.sidebar.button("Đăng Xuất"):
   st.session_state.logged_in = False
   st.session_state.current_user = None
@@ -172,7 +211,6 @@ if user_info["role"] == "admin":
 
 # Lọc danh sách ao theo quyền hạn
 if user_info["role"] == "admin":
-  # Admin có thể chọn xem toàn bộ hoặc lọc theo từng chủ ao cụ thể
   danh_sach_chu_ao = list(
       set(
           [
@@ -262,7 +300,6 @@ selected_ao_display = st.selectbox(
 )
 
 if selected_ao_display is not None:
-  # Lấy lại đúng object ao dựa trên tên hiển thị
   selected_index = ten_cac_ao.index(selected_ao_display)
   current_ao = danh_sach_ao_hien_thi[selected_index]
 
