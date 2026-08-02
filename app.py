@@ -141,7 +141,6 @@ with st.sidebar.expander("🔑 Đổi Mật Khẩu"):
 
 # TÍNH NĂNG TẠO TÀI KHOẢN MỚI
 if user_info["role"] == "admin":
-  # Admin được quyền tạo cả Manager (chủ ao) lẫn Staff (nhân viên)
   with st.sidebar.expander("👤 Tạo Tài Khoản Mới"):
     with st.form("create_user_form_admin"):
       new_user_username = st.text_input("Tên đăng nhập mới")
@@ -184,7 +183,6 @@ if user_info["role"] == "admin":
           st.error("Vui lòng điền đầy đủ thông tin!")
 
 elif user_info["role"] == "manager":
-  # Chủ ao (Manager) chỉ được quyền tạo nhân viên (Staff) trực thuộc chính mình
   with st.sidebar.expander("👤 Tạo Tài Khoản Nhân Viên"):
     with st.form("create_user_form_manager"):
       new_user_username = st.text_input("Tên đăng nhập nhân viên")
@@ -212,6 +210,33 @@ elif user_info["role"] == "manager":
             st.rerun()
         else:
           st.error("Vui lòng điền đầy đủ thông tin!")
+
+# HƯỚNG DẪN TRỊ BỆNH NẰM TRÊN SIDEBAR CHO CHỦ AO & NHÂN VIÊN
+if user_info["role"] == "manager":
+  with st.sidebar.expander("📖 Sổ Tay Trị Bệnh (Tự Sửa)"):
+    with st.form("sidebar_edit_hd_manager"):
+      noi_dung_sb = st.text_area(
+          "Cập nhật phác đồ",
+          value=st.session_state.huong_dan_benh.get(
+              st.session_state.current_user, ""
+          ),
+          height=150,
+      )
+      if st.form_submit_button("Lưu Sổ Tay"):
+        st.session_state.huong_dan_benh[st.session_state.current_user] = (
+            noi_dung_sb
+        )
+        save_data()
+        st.success("Đã lưu!")
+        st.rerun()
+
+elif user_info["role"] == "staff":
+  with st.sidebar.expander("📖 Xem Sổ Tay Trị Bệnh"):
+    chu_quan_ly = user_info["owner"]
+    noi_dung_xem = st.session_state.huong_dan_benh.get(
+        chu_quan_ly, "Chưa có hướng dẫn."
+    )
+    st.markdown(noi_dung_xem)
 
 if st.sidebar.button("Đăng Xuất"):
   st.session_state.logged_in = False
@@ -454,7 +479,6 @@ if selected_ao_display is not None:
   # --- SỔ TAY HƯỚNG DẪN TRỊ BỆNH THEO TỪNG CHỦ AO ---
   st.subheader("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh")
 
-  # Xác định chủ ao sở hữu ao đang xem
   chu_ao_ao = current_ao["chu_so_huu"]
 
   if chu_ao_ao not in st.session_state.huong_dan_benh:
@@ -462,7 +486,6 @@ if selected_ao_display is not None:
         "Chưa có hướng dẫn trị bệnh."
     )
 
-  # Quyền sửa: Admin sửa được tất cả, Chủ ao chỉ sửa được sổ tay của chính họ
   duoc_phep_sua = (user_info["role"] == "admin") or (
       user_info["role"] == "manager"
       and st.session_state.current_user == chu_ao_ao
