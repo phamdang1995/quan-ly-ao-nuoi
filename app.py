@@ -210,41 +210,39 @@ elif user_info["role"] == "manager":
         else:
           st.error("Vui lòng điền đầy đủ thông tin!")
 
-# SỔ TAY TRỊ BỆNH TRÊN SIDEBAR
-# 1. Nếu là Admin hoặc Chủ ao -> Hiển thị khung tự sửa sổ tay riêng của họ
-if user_info["role"] in ["admin", "manager"]:
-  with st.sidebar.expander("📖 Sổ Tay Trị Bệnh (Tự Sửa)"):
-    with st.form(f"sidebar_edit_hd_{st.session_state.current_user}"):
-      current_key = st.session_state.current_user
-      if current_key not in st.session_state.huong_dan_benh:
-        st.session_state.huong_dan_benh[current_key] = "Nhập phác đồ..."
-
-      noi_dung_sb = st.text_area(
-          "Cập nhật phác đồ của bạn",
-          value=st.session_state.huong_dan_benh[current_key],
-          height=180,
-      )
-      if st.form_submit_button("💾 Lưu Sổ Tay"):
-        st.session_state.huong_dan_benh[current_key] = noi_dung_sb
-        save_data()
-        st.success("Đã lưu sổ tay thành công!")
-        st.rerun()
-
-# 2. Nếu là Nhân viên -> Chỉ hiển thị xem sổ tay của chủ quản lý trực tiếp
-elif user_info["role"] == "staff":
-  with st.sidebar.expander("📖 Xem Sổ Tay Trị Bệnh"):
-    chu_quan_ly = user_info["owner"]
-    noi_dung_xem = st.session_state.huong_dan_benh.get(
-        chu_quan_ly, "Chủ quản lý chưa cập nhật hướng dẫn."
-    )
-    st.markdown(noi_dung_xem)
-
 if st.sidebar.button("Đăng Xuất"):
   st.session_state.logged_in = False
   st.session_state.current_user = None
   st.rerun()
 
 st.title("💧 Hệ Thống Quản Lý Ao Nuôi Đa Cấp")
+
+# --- SỔ TAY HƯỚNG DẪN & PHÁC ĐỒ TRỊ BỆNH HIỂN THỊ NGOÀI MÀN HÌNH CHÍNH ---
+if user_info["role"] in ["admin", "manager"]:
+  target_key = st.session_state.current_user
+  if target_key not in st.session_state.huong_dan_benh:
+    st.session_state.huong_dan_benh[target_key] = "Nhập phác đồ..."
+
+  with st.expander("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Tự Sửa)"):
+    with st.form(f"main_edit_hd_{target_key}"):
+      noi_dung_main = st.text_area(
+          "Chỉnh sửa nội dung phác đồ trị bệnh của bạn:",
+          value=st.session_state.huong_dan_benh[target_key],
+          height=300,
+      )
+      if st.form_submit_button("💾 Lưu Lại Sổ Tay"):
+        st.session_state.huong_dan_benh[target_key] = noi_dung_main
+        save_data()
+        st.success("Đã lưu sổ tay thành công!")
+        st.rerun()
+
+elif user_info["role"] == "staff":
+  chu_quan_ly = user_info["owner"]
+  with st.expander("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Xem)"):
+    noi_dung_xem = st.session_state.huong_dan_benh.get(
+        chu_quan_ly, "Chủ quản lý chưa cập nhật hướng dẫn."
+    )
+    st.markdown(noi_dung_xem)
 
 # BẢNG QUẢN LÝ TÀI KHOẢN VÀ XEM AO CỦA NGƯỜI KHÁC (DÀNH CHO ADMIN)
 if user_info["role"] == "admin":
@@ -476,14 +474,3 @@ if selected_ao_display is not None:
 
   df_lich = pd.DataFrame(lich_trinh_data)
   st.dataframe(df_lich, use_container_width=True, hide_index=True)
-
-  # --- HIỂN THỊ SỔ TAY PHÁC ĐỒ TRỊ BỆNH CỦA CHỦ AO ĐANG QUẢN LÝ AO NÀY ---
-  st.subheader("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh")
-  chu_ao_ao = current_ao["chu_so_huu"]
-  noi_dung_hien_thi = st.session_state.huong_dan_benh.get(
-      chu_ao_ao, "Chưa có hướng dẫn trị bệnh."
-  )
-  st.info(
-      f"💡 Phác đồ này do chủ sở hữu ao (**{st.session_state.users.get(chu_ao_ao, {}).get('ten', chu_ao_ao)}**) biên soạn trực tiếp:"
-  )
-  st.markdown(noi_dung_hien_thi)
