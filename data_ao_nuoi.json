@@ -1,0 +1,40 @@
+{
+    "users": {
+        "dangpham": {
+            "password": "123",
+            "ten": "Phạm Hải Đăng (Admin)",
+            "role": "admin",
+            "owner": "system"
+        },
+        "chuao_a": {
+            "password": "123",
+            "ten": "Anh Ba (Chủ Ao)",
+            "role": "manager",
+            "owner": "system"
+        },
+        "nhanvien_cuadang": {
+            "password": "123",
+            "ten": "Nhân viên của Đăng",
+            "role": "staff",
+            "owner": "dangpham"
+        }
+    },
+    "data_ao": [
+        {
+            "id": "ao_1",
+            "chu_so_huu": "dangpham",
+            "ten": "Ao (Nuôi số 1)",
+            "ngay_tha": "2026-07-31",
+            "so_ngay": 120,
+            "chu_ky_khoang": 3,
+            "chu_ky_vitamin": 5,
+            "ph_log": {
+                "Ngày 0": {
+                    "sang": 7.0,
+                    "trua": 7.5,
+                    "chieu": 7.2
+                }
+            }
+        }
+    ]
+}
