@@ -9,11 +9,9 @@ DEFAULT_DATA = {
     "users": {
         "admin": {"password": "123", "role": "admin", "name": "Phạm Hải Đăng"},
         "dangpham": {"password": "123", "role": "user", "name": "Đăng Phạm"},
-        "chuo_a": {"password": "123", "role": "user", "name": "Anh Ba"}
     },
     "ponds": {
         "dangpham": ["Ao 1 (Thương phẩm)", "Ao 2 (Ương giống)"],
-        "chuo_a": ["Ao Ba 1", "Ao Ba 2"]
     },
     "ph_log": {}
 }
