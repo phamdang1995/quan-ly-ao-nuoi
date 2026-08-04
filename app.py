@@ -39,6 +39,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.session_state.role = ""
+    st.session_state.name = ""
 
 # ----------------- GIAO DIỆN ĐĂNG NHẬP -----------------
 if not st.session_state.logged_in:
@@ -68,12 +69,12 @@ if st.sidebar.button("Đăng Xuất"):
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.session_state.role = ""
+    st.session_state.name = ""
     st.rerun()
 
 st.title("💧 Hệ Thống Quản Lý Ao Nuôi")
 
 current_user = st.session_state.username
-role = st.session_state.role
 
 # 1. Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Cố định, không cho sửa)
 with st.expander("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Cố Định)", expanded=True):
@@ -107,7 +108,6 @@ st.divider()
 # 2. Quản Lý Danh Sách Ao Của Cả Chủ Ao Khác
 st.subheader("👥 Quản Lý Danh Sách Tài Khoản & Xem Ao Của Chủ Khác")
 
-# Lựa chọn xem ao theo chủ sở hữu
 all_users = data["users"]
 user_options = {info["name"]: uname for uname, info in all_users.items()}
 selected_name = st.selectbox("Lọc xem ao theo chủ sở hữu:", list(user_options.keys()))
@@ -131,11 +131,10 @@ if ponds_of_current_user:
     selected_pond = st.selectbox("Chọn ao cần đo:", ponds_of_current_user)
     ph_value = st.number_input("Nhập giá trị pH:", min_value=0.0, max_value=14.0, value=7.5, step=0.1)
     
-    # Tự động lấy ngày giờ hiện tại theo hệ thống
     current_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     st.info(f"🕒 Thời gian ghi nhận tự động: **{current_time_str}**")
     
-    if st.button("💾 Lưu Lưu Lệ pH"):
+    if st.button("💾 Lưu pH"):
         if "ph_log" not in data:
             data["ph_log"] = {}
         if current_user not in data["ph_log"]:
@@ -150,11 +149,10 @@ if ponds_of_current_user:
         save_data(data)
         st.success("Đã lưu chỉ số pH thành công!")
 
-    # Hiển thị lịch sử pH đã đo
     if current_user in data["ph_log"] and selected_pond in data["ph_log"][current_user]:
         st.markdown("##### Lịch sử đo pH của ao này:")
         logs = data["ph_log"][current_user][selected_pond]
         for log in reversed(logs):
-            st.text(- Thời gian: {log['time']} | pH: {log['ph']})
+            st.text(f"- Thời gian: {log['time']} | pH: {log['ph']}")
 else:
     st.warning("Bạn chưa có ao nào trong hệ thống để ghi nhận pH.")
