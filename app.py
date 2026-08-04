@@ -7,9 +7,9 @@ DATA_FILE = "data_ao_nuoi.json"
 
 DEFAULT_DATA = {
     "users": {
-        "admin": {"password": "123", "role": "admin", "name": "Phạm Hải Đăng"},
-        "dangpham": {"password": "123", "role": "user", "name": "Đăng Phạm"},
-        "chuo_a": {"password": "123", "role": "user", "name": "Anh Ba"}
+        "admin": {"password": "123", "role": "admin", "ten": "Phạm Hải Đăng"},
+        "dangpham": {"password": "123", "role": "user", "ten": "Đăng Phạm"},
+        "chuo_a": {"password": "123", "role": "user", "ten": "Anh Ba"}
     },
     "ponds": {
         "dangpham": ["Ao 1 (Thương phẩm)", "Ao 2 (Ương giống)"],
@@ -22,19 +22,7 @@ def load_data():
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                # Kiểm tra và bổ sung users nếu thiếu cấu trúc
-                if "users" not in data:
-                    data["users"] = DEFAULT_DATA["users"]
-                else:
-                    for uname, uinfo in DEFAULT_DATA["users"].items():
-                        if uname not in data["users"]:
-                            data["users"][uname] = uinfo
-                        elif "name" not in data["users"][uname]:
-                            data["users"][uname]["name"] = uinfo["name"]
-                if "ponds" not in data:
-                    data["ponds"] = DEFAULT_DATA["ponds"]
-                return data
+                return json.load(f)
         except:
             return DEFAULT_DATA
     return DEFAULT_DATA
@@ -51,7 +39,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.session_state.role = ""
-    st.session_state.name = ""
+    st.session_state.ten = ""
 
 # ----------------- GIAO DIỆN ĐĂNG NHẬP -----------------
 if not st.session_state.logged_in:
@@ -60,12 +48,12 @@ if not st.session_state.logged_in:
     password = st.text_input("Mật khẩu", type="password")
     
     if st.button("Đăng Nhập"):
-        users = data["users"]
+        users = data.get("users", {})
         if username in users and users[username]["password"] == password:
             st.session_state.logged_in = True
             st.session_state.username = username
             st.session_state.role = users[username].get("role", "user")
-            st.session_state.name = users[username].get("name", username)
+            st.session_state.ten = users[username].get("ten", username)
             st.success("Đăng nhập thành công!")
             st.rerun()
         else:
@@ -73,7 +61,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ----------------- GIAO DIỆN CHÍNH SAU KHI ĐĂNG NHẬP -----------------
-st.sidebar.title(f"Chào, {st.session_state.name}")
+st.sidebar.title(f"Chào, {st.session_state.ten}")
 if st.session_state.role == "admin":
     st.sidebar.markdown("**(Admin)**")
 
@@ -81,7 +69,7 @@ if st.sidebar.button("Đăng Xuất"):
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.session_state.role = ""
-    st.session_state.name = ""
+    st.session_state.ten = ""
     st.rerun()
 
 st.title("💧 Hệ Thống Quản Lý Ao Nuôi")
@@ -120,13 +108,22 @@ st.divider()
 # 2. Quản Lý Danh Sách Ao Của Cả Chủ Ao Khác
 st.subheader("👥 Quản Lý Danh Sách Tài Khoản & Xem Ao Của Chủ Khác")
 
-all_users = data["users"]
-user_options = {info.get("name", uname): uname for uname, info in all_users.items()}
+all_users = data.get("users", {})
+user_options = {info.get("ten", uname): uname for uname, info in all_users.items()}
 selected_name = st.selectbox("Lọc xem ao theo chủ sở hữu:", list(user_options.keys()))
 selected_username = user_options[selected_name]
 
 st.markdown(f"**Danh sách ao của chủ ao: {selected_name}**")
-selected_user_ponds = data["ponds"].get(selected_username, [])
+
+# Hỗ trợ cấu trúc cũ hoặc cấu trúc mới của file json
+ponds_data = data.get("ponds", {})
+selected_user_ponds = []
+if isinstance(ponds_data, dict):
+    selected_user_ponds = ponds_data.get(selected_username, [])
+elif isinstance(ponds_data, list):
+    # Nếu trong json lưu danh sách theo dạng mảng data_ao
+    selected_user_ponds = [item.get("ten") for item in ponds_data if item.get("chu_so_huu") == selected_username]
+
 if selected_user_ponds:
     for p in selected_user_ponds:
         st.markdown(f"- 🌊 {p}")
@@ -138,9 +135,8 @@ st.divider()
 # 3. Ghi Chép pH (Tự động cập nhật ngày giờ hiện tại, không cần sửa)
 st.subheader("📊 Ghi Nhập & Theo Dõi Chỉ Số pH")
 
-ponds_of_current_user = data["ponds"].get(current_user, [])
-if ponds_of_current_user:
-    selected_pond = st.selectbox("Chọn ao cần đo:", ponds_of_current_user)
+if selected_user_ponds:
+    selected_pond = st.selectbox("Chọn ao cần đo:", selected_user_ponds)
     ph_value = st.number_input("Nhập giá trị pH:", min_value=0.0, max_value=14.0, value=7.5, step=0.1)
     
     current_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
