@@ -6,7 +6,7 @@ import streamlit as st
 
 # Cấu hình trang
 st.set_page_config(
-    page_title="Hệ Thống Quản Lý Ao Nuôi Đa Cấp", page_icon="💧", layout="centered"
+    page_title="Hệ Thống Quản Lý Ao Nuôi", page_icon="💧", layout="centered"
 )
 
 DATA_FILE = "data_ao_nuoi.json"
@@ -57,7 +57,26 @@ def load_data():
           }
       ],
       "huong_dan_benh": {
-          "dangpham": "Sổ tay phác đồ trị bệnh riêng của Admin Đăng...",
+          "dangpham": (
+              "### 1. Chuẩn Bị Trước Khi Thả:\n"
+              "- Tạc vôi số lượng: **4kg / 1 ao**\n"
+              "- Kết hợp: **50g thuốc tím**\n"
+              "- Thời điểm: Tiến hành trước khi thả giống **5 ngày**.\n\n"
+              "### 2. Tạc Vôi Định Kỳ:\n"
+              "- Liều lượng vôi: **1kg / 1 ao**\n"
+              "- Kết hợp: **35g Vitamin C** (khoáng riêng).\n\n"
+              "### 3. Xử Lý Khi Ốc Bị Sưng Vòi (Ngâm Cấp Tốc):\n"
+              "- Vớt ngay những con ốc đang có triệu chứng bệnh.\n"
+              "- Cho vào thau nước sạch.\n"
+              "- Hòa loãng: **5g Berberin-S** vào thau để ngâm.\n\n"
+              "### 4. Tạc Thuốc Trị Bệnh Dưới Ao (Khi Sưng Vòi):\n"
+              "- Dùng vi sinh: **Biobee Em (10g)**\n"
+              "- Kết hợp khoáng: **Khoáng Vi lượng (100g)**\n"
+              "- Cách dùng: Tạc trực tiếp xuống ao.\n\n"
+              "### 5. Phòng Ngừa Bệnh Cho Ốc Qua Thức Ăn:\n"
+              "- Sử dụng: **Chicocin (5g)** cho mỗi **1kg thức ăn**.\n"
+              "- Cách dùng: Trộn đều với thức ăn, để nghỉ **10 phút** rồi cho ăn."
+          ),
           "chuao_a": "Sổ tay phác đồ trị bệnh riêng của Chủ ao Anh Ba...",
       },
   }
@@ -215,13 +234,35 @@ if st.sidebar.button("Đăng Xuất"):
   st.session_state.current_user = None
   st.rerun()
 
-st.title("💧 Hệ Thống Quản Lý Ao Nuôi Đa Cấp")
+st.title("💧 Hệ Thống Quản Lý Ao Nuôi")
 
-# --- SỔ TAY HƯỚNG DẪN & PHÁC ĐỒ TRỊ BỆNH HIỂN THỊ NGOÀI MÀN HÌNH CHÍNH ---
+# --- SỔ TAY HƯỚNG DẪN & PHÁC ĐỒ TRỊ BỆNH NGOÀI MÀN HÌNH CHÍNH ---
 if user_info["role"] in ["admin", "manager"]:
   target_key = st.session_state.current_user
   if target_key not in st.session_state.huong_dan_benh:
-    st.session_state.huong_dan_benh[target_key] = "Nhập phác đồ..."
+    if target_key == "dangpham":
+      st.session_state.huong_dan_benh[target_key] = (
+          "### 1. Chuẩn Bị Trước Khi Thả:\n"
+          "- Tạc vôi số lượng: **4kg / 1 ao**\n"
+          "- Kết hợp: **50g thuốc tím**\n"
+          "- Thời điểm: Tiến hành trước khi thả giống **5 ngày**.\n\n"
+          "### 2. Tạc Vôi Định Kỳ:\n"
+          "- Liều lượng vôi: **1kg / 1 ao**\n"
+          "- Kết hợp: **35g Vitamin C** (khoáng riêng).\n\n"
+          "### 3. Xử Lý Khi Ốc Bị Sưng Vòi (Ngâm Cấp Tốc):\n"
+          "- Vớt ngay những con ốc đang có triệu chứng bệnh.\n"
+          "- Cho vào thau nước sạch.\n"
+          "- Hòa loãng: **5g Berberin-S** vào thau để ngâm.\n\n"
+          "### 4. Tạc Thuốc Trị Bệnh Dưới Ao (Khi Sưng Vòi):\n"
+          "- Dùng vi sinh: **Biobee Em (10g)**\n"
+          "- Kết hợp khoáng: **Khoáng Vi lượng (100g)**\n"
+          "- Cách dùng: Tạc trực tiếp xuống ao.\n\n"
+          "### 5. Phòng Ngừa Bệnh Cho Ốc Qua Thức Ăn:\n"
+          "- Sử dụng: **Chicocin (5g)** cho mỗi **1kg thức ăn**.\n"
+          "- Cách dùng: Trộn đều với thức ăn, để nghỉ **10 phút** rồi cho ăn."
+      )
+    else:
+      st.session_state.huong_dan_benh[target_key] = "Nhập phác đồ..."
 
   with st.expander("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Tự Sửa)"):
     with st.form(f"main_edit_hd_{target_key}"):
@@ -386,16 +427,26 @@ if selected_ao_display is not None:
         st.success("Đã cập nhật thông tin thành công!")
         st.rerun()
 
-  # --- NHẬT KÝ ĐO PH (3 KHUNG: SÁNG - TRƯA - CHIỀU) ---
-  st.subheader("💧 Nhật Ký Đo pH (Sáng/Trưa/Chiều)")
+  # --- TỰ ĐỘNG TÍNH TOÁN NGÀY HÔM NAY THEO THỰC TẾ ---
+  ngay_hom_nay = datetime.today().date()
+  so_ngay_nuoi_hien_tai = (ngay_hom_nay - current_ao["ngay_tha"]).days
 
-  danh_sach_moc_ngay = [f"Ngày {i}" for i in range(0, current_ao["so_ngay"] + 1, 1)]
-  selected_moc = st.selectbox(
-      "Chọn mốc thời gian:", danh_sach_moc_ngay, key="selectbox_moc_ngay"
+  if so_ngay_nuoi_hien_tai < 0:
+    hien_thi_ngay = 0
+  elif so_ngay_nuoi_hien_tai > current_ao["so_ngay"]:
+    hien_thi_ngay = current_ao["so_ngay"]
+  else:
+    hien_thi_ngay = so_ngay_nuoi_hien_tai
+
+  key_hom_nay = f"Ngày {hien_thi_ngay}"
+
+  # --- NHẬT KÝ ĐO PH CHO ĐÚNG HÔM NAY ---
+  st.subheader(
+      f"💧 Nhập pH Hôm Nay: {key_hom_nay} ({ngay_hom_nay.strftime('%d/%m/%Y')})"
   )
 
   old_data = current_ao["ph_log"].get(
-      selected_moc, {"sang": 7.0, "trua": 7.5, "chieu": 7.2}
+      key_hom_nay, {"sang": 7.0, "trua": 7.5, "chieu": 7.2}
   )
 
   col_s, col_t, col_c = st.columns(3)
@@ -406,7 +457,7 @@ if selected_ao_display is not None:
         max_value=14.0,
         value=float(old_data["sang"]),
         step=0.1,
-        key=f"input_sang_{selected_moc}",
+        key=f"input_sang_{current_ao['id']}",
     )
   with col_t:
     ph_trua = st.number_input(
@@ -415,7 +466,7 @@ if selected_ao_display is not None:
         max_value=14.0,
         value=float(old_data["trua"]),
         step=0.1,
-        key=f"input_trua_{selected_moc}",
+        key=f"input_trua_{current_ao['id']}",
     )
   with col_c:
     ph_chieu = st.number_input(
@@ -424,17 +475,17 @@ if selected_ao_display is not None:
         max_value=14.0,
         value=float(old_data["chieu"]),
         step=0.1,
-        key=f"input_chieu_{selected_moc}",
+        key=f"input_chieu_{current_ao['id']}",
     )
 
-  if st.button("💾 Lưu Chỉ Số pH Này"):
-    current_ao["ph_log"][selected_moc] = {
+  if st.button("💾 Lưu Chỉ Số pH Hôm Nay"):
+    current_ao["ph_log"][key_hom_nay] = {
         "sang": ph_sang,
         "trua": ph_trua,
         "chieu": ph_chieu,
     }
     save_data()
-    st.success(f"💾 Đã lưu thành công chỉ số pH cho {selected_moc}!")
+    st.success(f"💾 Đã lưu thành công chỉ số pH cho {key_hom_nay}!")
     st.rerun()
 
   # --- LỊCH TRÌNH TÁC THUỐC ĐỊNH KỲ ---
@@ -463,11 +514,15 @@ if selected_ao_display is not None:
     else:
       ph_str = "Chưa đo"
 
+    trang_thai_ngay = (
+        f"{ngay_cu_the.strftime('%d/%m/%Y')} ({thu_trong_tuan})"
+    )
+    if i == hien_thi_ngay:
+      trang_thai_ngay += " 👈 (Hôm nay)"
+
     lich_trinh_data.append({
         "Ngày": f"Ngày {i}",
-        "Thứ ngày": (
-            f"{ngay_cu_the.strftime('%d/%m/%Y')} ({thu_trong_tuan})"
-        ),
+        "Thứ ngày": trang_thai_ngay,
         "Công việc tạc thuốc": cong_viec,
         "pH (Sáng/Trưa/Chiều)": ph_str,
     })
