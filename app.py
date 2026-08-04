@@ -51,8 +51,8 @@ def load_data():
               "ten": "Ao (Nuôi số 1)",
               "ngay_tha": datetime.today().date() - timedelta(days=2),
               "so_ngay": 120,
-              "chu_ky_khoang": 3,
-              "chu_ky_vitamin": 5,
+              "chu_ky_khoang": 4,      # Chu kỳ tạc vôi / khoáng: 4 ngày
+              "chu_ky_vitamin": 5,     # Chu kỳ tạc Vitamin C: 5 ngày
               "ph_log": {},
           }
       ],
@@ -147,11 +147,7 @@ if user_info["role"] == "admin":
       submit_create_user = st.form_submit_button("Tạo Tài Khoản")
 
       if submit_create_user:
-        if (
-            new_user_username
-            and new_user_password
-            and new_user_name
-        ):
+        if new_user_username and new_user_password and new_user_name:
           if new_user_username in st.session_state.users:
             st.error("Tên đăng nhập này đã tồn tại!")
           else:
@@ -178,11 +174,7 @@ elif user_info["role"] == "manager":
       submit_create_staff = st.form_submit_button("Tạo Tài Khoản Nhân Viên")
 
       if submit_create_staff:
-        if (
-            new_user_username
-            and new_user_password
-            and new_user_name
-        ):
+        if new_user_username and new_user_password and new_user_name:
           if new_user_username in st.session_state.users:
             st.error("Tên đăng nhập này đã tồn tại!")
           else:
@@ -205,7 +197,7 @@ if st.sidebar.button("Đăng Xuất"):
 
 st.title("💧 Hệ Thống Quản Lý Ao Nuôi")
 
-# --- SỔ TAY HƯỚNG DẪN & PHÁC ĐỒ TRỊ BỆNH CỐ ĐỊNH ---
+# --- SỔ TAY HƯỚNG DẪN & PHÁC ĐỒ TRỊ BỆNH CỐ ĐỊNH (ĐÃ CẬP NHẬT CHUẨN) ---
 with st.expander("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Cố Định)", expanded=True):
   st.markdown("""
 ### 1. Chuẩn Bị Trước Khi Thả:
@@ -213,9 +205,9 @@ with st.expander("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Cố 
 - Kết hợp: **50g thuốc tím**
 - Thời điểm: Tiến hành trước khi thả giống **5 ngày**.
 
-### 2. Tạc Vôi Định Kỳ:
-- Liều lượng vôi: **1kg / 1 ao**
-- Kết hợp: **35g Vitamin C** (khoáng riêng).
+### 2. Tạc Vôi & Vitamin C Định Kỳ:
+- **Tạc vôi định kỳ:** **1kg / 1 ao** (Chu kỳ: **4 ngày / lần**).
+- **Tạc Vitamin C:** **20g / 1 ao** (Chu kỳ: **5 ngày / lần**).
 
 ### 3. Xử Lý Khi Ốc Bị Sưng Vòi (Ngâm Cấp Tốc):
 - Vớt ngay những con ốc đang có triệu chứng bệnh.
@@ -244,7 +236,9 @@ if user_info["role"] == "admin":
           "Vai trò": u_val["role"],
           "Quản lý bởi": u_val["owner"],
       })
-    st.dataframe(pd.DataFrame(user_data_list), use_container_width=True, hide_index=True)
+    st.dataframe(
+        pd.DataFrame(user_data_list), use_container_width=True, hide_index=True
+    )
 
 # Lọc danh sách ao theo quyền hạn
 if user_info["role"] == "admin":
@@ -257,21 +251,24 @@ if user_info["role"] == "admin":
           ]
       )
   )
+
+  mapping_chu_ao = {
+      u_id: st.session_state.users[u_id]["ten"] for u_id in danh_sach_chu_ao
+  }
+
   chon_chu_ao_xem = st.selectbox(
       "🔍 Lọc xem ao theo chủ sở hữu:",
-      options=["Tất cả các ao"] + danh_sach_chu_ao,
+      options=["all"] + danh_sach_chu_ao,
       format_func=lambda x: "Tất cả các ao"
-      if x == "Tất cả các ao"
-      else f"Ao của: {st.session_state.users[x]['ten']}",
+      if x == "all"
+      else f"Ao của: {mapping_chu_ao[x]}",
   )
 
-  if chon_chu_ao_xem == "Tất cả các ao":
+  if chon_chu_ao_xem == "all":
     danh_sach_ao_hien_thi = st.session_state.data_ao
   else:
     danh_sach_ao_hien_thi = [
-        ao
-        for ao in st.session_state.data_ao
-        if ao["chu_so_huu"] == chon_chu_ao_xem
+        ao for ao in st.session_state.data_ao if ao["chu_so_huu"] == chon_chu_ao_xem
     ]
 
 elif user_info["role"] == "manager":
@@ -283,9 +280,7 @@ elif user_info["role"] == "manager":
 else:
   quan_ly_truc_thuoc = user_info["owner"]
   danh_sach_ao_hien_thi = [
-      ao
-      for ao in st.session_state.data_ao
-      if ao["chu_so_huu"] == quan_ly_truc_thuoc
+      ao for ao in st.session_state.data_ao if ao["chu_so_huu"] == quan_ly_truc_thuoc
   ]
 
 # Thêm ao mới
@@ -312,8 +307,8 @@ if user_info["role"] in ["admin", "manager"]:
             "ten": new_ten,
             "ngay_tha": new_ngay_tha,
             "so_ngay": int(new_so_ngay),
-            "chu_ky_khoang": 3,
-            "chu_ky_vitamin": 5,
+            "chu_ky_khoang": 4,   # Cập nhật chuẩn 4 ngày tạc vôi
+            "chu_ky_vitamin": 5,  # Cập nhật chuẩn 5 ngày tạc Vitamin C
             "ph_log": {},
         })
         save_data()
@@ -351,7 +346,9 @@ if selected_ao_display is not None:
     ngay_thu_hoach = current_ao["ngay_tha"] + timedelta(
         days=current_ao["so_ngay"]
     )
-    st.success(f"🏁 **Ngày Thu Hoạch Dự Kiến:** {ngay_thu_hoach.strftime('%d/%m/%Y')}")
+    st.success(
+        f"🏁 **Ngày Thu Hoạch Dự Kiến:** {ngay_thu_hoach.strftime('%d/%m/%Y')}"
+    )
 
   with st.expander("⚙️ Chỉnh sửa thông tin ngày thả giống"):
     with st.form(f"edit_form_{current_ao['id']}"):
@@ -387,13 +384,13 @@ if selected_ao_display is not None:
 
   key_hom_nay = f"Ngày {hien_thi_ngay}"
 
-  # --- NHẬT KÝ ĐO PH CHO ĐÚNG HÔM NAY ---
+  # --- NHẬT KÝ ĐO PH ĐỘC LẬP TỪNG BUỔI ---
   st.subheader(
       f"💧 Nhập pH Hôm Nay: {key_hom_nay} ({ngay_hom_nay.strftime('%d/%m/%Y')})"
   )
 
   old_data = current_ao["ph_log"].get(
-      key_hom_nay, {"sang": 7.0, "trua": 7.5, "chieu": 7.2}
+      key_hom_nay, {"sang": 0.0, "trua": 0.0, "chieu": 0.0}
   )
 
   col_s, col_t, col_c = st.columns(3)
@@ -402,68 +399,82 @@ if selected_ao_display is not None:
         "pH Sáng",
         min_value=0.0,
         max_value=14.0,
-        value=float(old_data["sang"]),
+        value=float(old_data.get("sang", 0.0)),
         step=0.1,
         key=f"input_sang_{current_ao['id']}",
     )
+    if st.button("💾 Lưu Sáng", key=f"btn_sang_{current_ao['id']}"):
+      if key_hom_nay not in current_ao["ph_log"]:
+        current_ao["ph_log"][key_hom_nay] = {"sang": 0.0, "trua": 0.0, "chieu": 0.0}
+      current_ao["ph_log"][key_hom_nay]["sang"] = ph_sang
+      save_data()
+      st.success(f"Đã lưu pH Sáng ({ph_sang}) thành công!")
+      st.rerun()
+
   with col_t:
     ph_trua = st.number_input(
         "pH Trưa",
         min_value=0.0,
         max_value=14.0,
-        value=float(old_data["trua"]),
+        value=float(old_data.get("trua", 0.0)),
         step=0.1,
         key=f"input_trua_{current_ao['id']}",
     )
+    if st.button("💾 Lưu Trưa", key=f"btn_trua_{current_ao['id']}"):
+      if key_hom_nay not in current_ao["ph_log"]:
+        current_ao["ph_log"][key_hom_nay] = {"sang": 0.0, "trua": 0.0, "chieu": 0.0}
+      current_ao["ph_log"][key_hom_nay]["trua"] = ph_trua
+      save_data()
+      st.success(f"Đã lưu pH Trưa ({ph_trua}) thành công!")
+      st.rerun()
+
   with col_c:
     ph_chieu = st.number_input(
         "pH Chiều",
         min_value=0.0,
         max_value=14.0,
-        value=float(old_data["chieu"]),
+        value=float(old_data.get("chieu", 0.0)),
         step=0.1,
         key=f"input_chieu_{current_ao['id']}",
     )
+    if st.button("💾 Lưu Chiều", key=f"btn_chieu_{current_ao['id']}"):
+      if key_hom_nay not in current_ao["ph_log"]:
+        current_ao["ph_log"][key_hom_nay] = {"sang": 0.0, "trua": 0.0, "chieu": 0.0}
+      current_ao["ph_log"][key_hom_nay]["chieu"] = ph_chieu
+      save_data()
+      st.success(f"Đã lưu pH Chiều ({ph_chieu}) thành công!")
+      st.rerun()
 
-  if st.button("💾 Lưu Chỉ Số pH Hôm Nay"):
-    current_ao["ph_log"][key_hom_nay] = {
-        "sang": ph_sang,
-        "trua": ph_trua,
-        "chieu": ph_chieu,
-    }
-    save_data()
-    st.success(f"💾 Đã lưu thành công chỉ số pH cho {key_hom_nay}!")
-    st.rerun()
-
-  # --- LỊCH TRÌNH TÁC THUỐC ĐỊNH KỲ ---
+  # --- LỊCH TRÌNH TÁC THUỐC ĐỊNH KỲ (CHUẨN 4 NGÀY VÔI, 5 NGÀY VITAMIN C) ---
   st.subheader("📋 Lịch Trình Tạc Thuốc Định Kỳ")
   lich_trinh_data = []
   for i in range(0, current_ao["so_ngay"] + 1):
     ngay_cu_the = current_ao["ngay_tha"] + timedelta(days=i)
     thu_trong_tuan = ngay_cu_the.strftime("%A")
 
+    # Kiểm tra lịch trình theo ngày (Vôi 4 ngày/lần, Vitamin C 5 ngày/lần)
     if i == 0:
       cong_viec = "Thả giống"
-    elif i % current_ao["chu_ky_khoang"] == 0:
-      cong_viec = "Tạc khoáng định kỳ"
-    elif i % current_ao["chu_ky_vitamin"] == 0:
-      cong_viec = "Bổ sung Vitamin / Men tiêu hóa"
     else:
-      cong_viec = "Theo dõi bình thường"
+      viec_list = []
+      if i % current_ao.get("chu_ky_khoang", 4) == 0:
+        viec_list.append("Tạc vôi định kỳ (1kg)")
+      if i % current_ao.get("chu_ky_vitamin", 5) == 0:
+        viec_list.append("Bổ sung Vitamin C (20g)")
+      
+      cong_viec = " + ".join(viec_list) if viec_list else "Theo dõi bình thường"
 
     key_moc = f"Ngày {i}"
     ph_info = current_ao["ph_log"].get(key_moc, None)
     if ph_info:
-      ph_str = (
-          f"Sáng: {ph_info['sang']} | Trưa: {ph_info['trua']} | Chiều:"
-          f" {ph_info['chieu']}"
-      )
+      s_val = ph_info.get("sang", "Chưa đo")
+      t_val = ph_info.get("trua", "Chưa đo")
+      c_val = ph_info.get("chieu", "Chưa đo")
+      ph_str = f"Sáng: {s_val} | Trưa: {t_val} | Chiều: {c_val}"
     else:
       ph_str = "Chưa đo"
 
-    trang_thai_ngay = (
-        f"{ngay_cu_the.strftime('%d/%m/%Y')} ({thu_trong_tuan})"
-    )
+    trang_thai_ngay = f"{ngay_cu_the.strftime('%d/%m/%Y')} ({thu_trong_tuan})"
     if i == hien_thi_ngay:
       trang_thai_ngay += " 👈 (Hôm nay)"
 
