@@ -1,53 +1,28 @@
 import json
 import os
+from datetime import datetime
 import streamlit as st
 
 DATA_FILE = "data_ao_nuoi.json"
 
-# Dữ liệu mặc định đầy đủ bao gồm cả phác đồ trị bệnh của dangpham
 DEFAULT_DATA = {
     "users": {
         "admin": {"password": "123", "role": "admin", "name": "Phạm Hải Đăng"},
         "dangpham": {"password": "123", "role": "user", "name": "Đăng Phạm"},
+        "chuo_a": {"password": "123", "role": "user", "name": "Anh Ba"}
     },
     "ponds": {
         "dangpham": ["Ao 1 (Thương phẩm)", "Ao 2 (Ương giống)"],
+        "chuo_a": ["Ao Ba 1", "Ao Ba 2"]
     },
-    "ph_log": {},
-    "huong_dan_benh": {
-        "dangpham": (
-            "### 1. Chuẩn Bị Trước Khi Thả:\n"
-            "- Tạc vôi số lượng: **4kg / 1 ao**\n"
-            "- Kết hợp: **50g thuốc tím**\n"
-            "- Thời điểm: Tiến hành trước khi thả giống **5 ngày**.\n\n"
-            "### 2. Tạc Vôi Định Kỳ:\n"
-            "- Liều lượng vôi: **1kg / 1 ao**\n"
-            "- Kết hợp: **35g Vitamin C** (khoáng riêng).\n\n"
-            "### 3. Xử Lý Khi Ốc Bị Sưng Vòi (Ngâm Cấp Tốc):\n"
-            "- Vớt ngay những con ốc đang có triệu chứng bệnh.\n"
-            "- Cho vào thau nước sạch.\n"
-            "- Hòa loãng: **5g Berberin-S** vào thau để ngâm.\n\n"
-            "### 4. Tạc Thuốc Trị Bệnh Dưới Ao (Khi Sưng Vòi):\n"
-            "- Dùng vi sinh: **Biobee Em (10g)**\n"
-            "- Kết hợp khoáng: **Khoáng Vi lượng (100g)**\n"
-            "- Cách dùng: Tạc trực tiếp xuống ao.\n\n"
-            "### 5. Phòng Ngừa Bệnh Cho Ốc Qua Thức Ăn:\n"
-            "- Sử dụng: **Chicocin (5g)** cho mỗi **1kg thức ăn**.\n"
-            "- Cách dùng: Trộn đều với thức ăn, để nghỉ **10 phút** rồi cho ăn."
-        ),
-        "chuo_a": "Sổ tay phác đồ trị bệnh riêng của Chủ ao Anh Ba..."
-    }
+    "ph_log": {}
 }
 
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                # Đảm bảo có đủ key huong_dan_benh nếu file cũ chưa có
-                if "huong_dan_benh" not in data:
-                    data["huong_dan_benh"] = DEFAULT_DATA["huong_dan_benh"]
-                return data
+                return json.load(f)
         except:
             return DEFAULT_DATA
     return DEFAULT_DATA
@@ -60,7 +35,6 @@ data = load_data()
 
 st.set_page_config(page_title="Hệ thống Quản Lý Ao Nuôi", layout="wide")
 
-# Khởi tạo session state đăng nhập nếu chưa có
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
@@ -101,32 +75,86 @@ st.title("💧 Hệ Thống Quản Lý Ao Nuôi")
 current_user = st.session_state.username
 role = st.session_state.role
 
-# 1. Phần Sổ tay hướng dẫn & Phác đồ trị bệnh
-with st.expander("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Tự Sửa)", expanded=True):
-    if "huong_dan_benh" not in data:
-        data["huong_dan_benh"] = DEFAULT_DATA["huong_dan_benh"]
-    
-    # Lấy nội dung hiện tại của user, nếu chưa có lấy mặc định
-    current_guide = data["huong_dan_benh"].get(current_user, "")
-    
-    if role == "admin":
-        # Admin có quyền sửa sổ tay của chính mình hoặc xem
-        edited_guide = st.text_area("Chỉnh sửa nội dung phác đồ trị bệnh của bạn:", value=current_guide, height=300)
-        if st.button("💾 Lưu Lại Sổ Tay"):
-            data["huong_dan_benh"][current_user] = edited_guide
-            save_data(data)
-            st.success("Đã lưu nội dung sổ tay thành công!")
-    else:
-        # User thường chỉ xem hoặc tự sửa của mình
-        edited_guide = st.text_area("Nội dung phác đồ trị bệnh:", value=current_guide, height=300)
-        if st.button("💾 Lưu Lại Sổ Tay"):
-            data["huong_dan_benh"][current_user] = edited_guide
-            save_data(data)
-            st.success("Đã lưu nội dung sổ tay thành công!")
+# 1. Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Cố định, không cho sửa)
+with st.expander("📖 Sổ Tay Hướng Dẫn & Phác Đồ Trị Bệnh (Cố Định)", expanded=True):
+    st.markdown("""
+### 1. Chuẩn Bị Trước Khi Thả:
+- Tạc vôi số lượng: **4kg / 1 ao**
+- Kết hợp: **50g thuốc tím**
+- Thời điểm: Tiến hành trước khi thả giống **5 ngày**.
 
-# Các chức năng quản lý danh sách ao, ghi chép pH, ...
+### 2. Tạc Vôi Định Kỳ:
+- Liều lượng vôi: **1kg / 1 ao**
+- Kết hợp: **35g Vitamin C** (khoáng riêng).
+
+### 3. Xử Lý Khi Ốc Bị Sưng Vòi (Ngâm Cấp Tốc):
+- Vớt ngay những con ốc đang có triệu chứng bệnh.
+- Cho vào thau nước sạch.
+- Hòa loãng: **5g Berberin-S** vào thau để ngâm.
+
+### 4. Tạc Thuốc Trị Bệnh Dưới Ao (Khi Sưng Vòi):
+- Dùng vi sinh: **Biobee Em (10g)**
+- Kết hợp khoáng: **Khoáng Vi lượng (100g)**
+- Cách dùng: Tạc trực tiếp xuống ao.
+
+### 5. Phòng Ngừa Bệnh Cho Ốc Qua Thức Ăn:
+- Sử dụng: **Chicocin (5g)** cho mỗi **1kg thức ăn**.
+- Cách dùng: Trộn đều với thức ăn, để nghỉ **10 phút** rồi cho ăn.
+    """)
+
 st.divider()
-st.subheader("📋 Quản Lý Danh Sách Ao")
-user_ponds = data["ponds"].get(current_user, [])
-for p in user_ponds:
-    st.markdown(f"- **{p}**")
+
+# 2. Quản Lý Danh Sách Ao Của Cả Chủ Ao Khác
+st.subheader("👥 Quản Lý Danh Sách Tài Khoản & Xem Ao Của Chủ Khác")
+
+# Lựa chọn xem ao theo chủ sở hữu
+all_users = data["users"]
+user_options = {info["name"]: uname for uname, info in all_users.items()}
+selected_name = st.selectbox("Lọc xem ao theo chủ sở hữu:", list(user_options.keys()))
+selected_username = user_options[selected_name]
+
+st.markdown(f"**Danh sách ao của chủ ao: {selected_name}**")
+selected_user_ponds = data["ponds"].get(selected_username, [])
+if selected_user_ponds:
+    for p in selected_user_ponds:
+        st.markdown(f"- 🌊 {p}")
+else:
+    st.info("Chủ ao này chưa có ao nào.")
+
+st.divider()
+
+# 3. Ghi Chép pH (Tự động cập nhật ngày giờ hiện tại, không cần sửa)
+st.subheader("📊 Ghi Nhập & Theo Dõi Chỉ Số pH")
+
+ponds_of_current_user = data["ponds"].get(current_user, [])
+if ponds_of_current_user:
+    selected_pond = st.selectbox("Chọn ao cần đo:", ponds_of_current_user)
+    ph_value = st.number_input("Nhập giá trị pH:", min_value=0.0, max_value=14.0, value=7.5, step=0.1)
+    
+    # Tự động lấy ngày giờ hiện tại theo hệ thống
+    current_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    st.info(f"🕒 Thời gian ghi nhận tự động: **{current_time_str}**")
+    
+    if st.button("💾 Lưu Lưu Lệ pH"):
+        if "ph_log" not in data:
+            data["ph_log"] = {}
+        if current_user not in data["ph_log"]:
+            data["ph_log"][current_user] = {}
+        if selected_pond not in data["ph_log"][current_user]:
+            data["ph_log"][current_user][selected_pond] = []
+            
+        data["ph_log"][current_user][selected_pond].append({
+            "time": current_time_str,
+            "ph": ph_value
+        })
+        save_data(data)
+        st.success("Đã lưu chỉ số pH thành công!")
+
+    # Hiển thị lịch sử pH đã đo
+    if current_user in data["ph_log"] and selected_pond in data["ph_log"][current_user]:
+        st.markdown("##### Lịch sử đo pH của ao này:")
+        logs = data["ph_log"][current_user][selected_pond]
+        for log in reversed(logs):
+            st.text(- Thời gian: {log['time']} | pH: {log['ph']})
+else:
+    st.warning("Bạn chưa có ao nào trong hệ thống để ghi nhận pH.")
